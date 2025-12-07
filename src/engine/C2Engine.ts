@@ -114,10 +114,7 @@ export class C2Engine {
     if (!navigator.gpu) throw new Error('WebGPU not supported');
     const adapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
     if (!adapter) throw new Error('No adapter found');
-
-    this.device = adapter.requestDevice ? await adapter.requestDevice() : null;
-    if (!this.device) throw new Error('Failed to create device');
-
+    this.device = await adapter.requestDevice();
     this.context = this.canvas.getContext('webgpu');
     this.format = navigator.gpu.getPreferredCanvasFormat();
     this.context?.configure({
@@ -129,16 +126,19 @@ export class C2Engine {
     this.resize(this.canvas.width, this.canvas.height);
     this.initResources();
 
-    this.atlasTexture = new GpuTexture(this.device);
+    this.atlasTexture = new GpuTexture(this.device!);
+
+    const baseUrl = import.meta.env.BASE_URL;
+
     await this.atlasTexture.load([
-      '/assets/friendly1.png',
-      '/assets/hostile.png',
-      '/assets/neutral1.png',
-      '/assets/unknown.png',
+      `${baseUrl}assets/friendly1.png`,
+      `${baseUrl}assets/hostile.png`,
+      `${baseUrl}assets/neutral1.png`,
+      `${baseUrl}assets/unknown.png`,
     ]);
 
-    this.simulationPass = new SimulationPass(this.device);
-    this.presentationPass = new PresentationPass(this.device, this.format);
+    this.simulationPass = new SimulationPass(this.device!);
+    this.presentationPass = new PresentationPass(this.device!, this.format);
 
     await this.simulationPass.init(
       this.uniformBuffer!,
